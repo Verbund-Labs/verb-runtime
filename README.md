@@ -1,33 +1,32 @@
-# verb-runtime ⚡
+# verb-runtime
+**The official native runtime engine for VerbLang.**
 
-The official native runtime engine for **VerbLang**, developed by **Verbund Labs**.
+Maintained by **Verbund Labs**.
 
-Designed from the ground up for extreme performance, combining the raw speed and direct hardware control of **C++20** with high-level conveniences from Python, JavaScript, HTML, and CSS.
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![C++ Standard](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.wikipedia.org/wiki/C%2B%2B20)
 
----
-
-## ✨ Features
-
-- **Blazing Native Performance**: Written in modern C++20 with zero-overhead abstractions.
-- **Dynamic & Static Type Value System**: High-speed unified variant (`verbrt::Value`) supporting integers, floats, strings, dynamic lists, hash dicts, closures, pointers, DOM nodes, and styles.
-- **Memory Management & Direct Pointer Control**:
-  - Raw memory allocation (`alloc`, `free`, `peek64`, `poke64`, `memcpy`).
-  - High-throughput bump / Arena allocator for zero-fragmentation allocations.
-  - Deterministic RAII `defer` cleanup semantics (`VERB_DEFER`).
-- **First-Class DOM & CSS Layout Engine**:
-  - Lightweight virtual DOM tree (`VerbNode`).
-  - Native CSS style resolver supporting tag, class (`.class`), and ID (`#id`) selectors.
-  - Multi-target renderers: Rich ANSI styled terminal UI (TUI) and standard HTML5 serialization.
-- **Asynchronous Event Loop**: Microtasks, macrotasks, native thread pool, and Promise/Future primitives.
-- **Seamless C/C++ FFI**: Direct dynamic library loading and ABI interop.
+`verb-runtime` (`libverbrt`) provides the foundational runtime primitives, memory allocators, virtual DOM tree, CSS cascade engine, and asynchronous event loop for VerbLang programs compiled to native binaries.
 
 ---
 
-## 🛠️ Building & Testing
+## Architectural Components
 
-### Prerequisites
-- Modern C++ compiler (`clang++` >= 15 or `g++` >= 11) supporting C++20.
-- `make` or `cmake` >= 3.16.
+- **Type Model (`verbrt::Value`)**: High-performance variant representing numbers, strings, lists, dictionaries, closures, raw pointers, DOM nodes, and styles with zero unnecessary indirection.
+- **Memory Subsystem**:
+  - Direct 64-bit memory primitives (`alloc`, `free`, `peek64`, `poke64`).
+  - High-throughput bump/arena allocator (`ArenaAllocator`).
+  - Deterministic RAII `defer` cleanup (`VERB_DEFER`).
+- **DOM & CSS Layout Engine**:
+  - Virtual DOM tree with attribute and child management (`VerbNode`).
+  - Cascading stylesheet engine resolving tag, `.class`, and `#id` selectors (`StyleSheet`).
+  - Dual render targets: Standard HTML5 serialization and ANSI terminal UI (TUI).
+- **Asynchronous Runtime**: Thread pool and event loop supporting microtasks and promises (`EventLoop`, `Promise`).
+- **Standard Library Primitives**: Math, JSON serialization (`json_stringify`, `json_parse`), string operations, list utilities, process execution (`exec`), and reactive state signals (`create_signal`).
+
+---
+
+## Building & Verification
 
 ### Build with Make
 ```bash
@@ -45,28 +44,29 @@ ctest --verbose
 
 ---
 
-## 🏛️ Architecture Overview
+## Repository Structure
 
 ```
 verb-runtime/
 ├── include/verbrt/
-│   ├── verbrt.hpp       # Master umbrella header
-│   ├── value.hpp        # Dynamic value model & operators
+│   ├── verbrt.hpp       # Umbrella header
+│   ├── value.hpp        # Dynamic value variant & operator overloads
 │   ├── memory.hpp       # Arena allocator, raw pointers & defer
-│   ├── dom.hpp          # Virtual DOM tree & ANSI/HTML renderers
+│   ├── dom.hpp          # Virtual DOM tree & multi-target renderers
 │   ├── css.hpp          # Cascading style sheets & selector engine
 │   ├── event_loop.hpp   # Async event loop, thread pool & Promise
-│   ├── stdlib.hpp       # Builtin functions (I/O, Math, Sys, Memory)
+│   ├── stdlib.hpp       # Standard library functions
+│   ├── json.hpp         # JSON parser and serializer
 │   └── ffi.hpp          # C dynamic library loader
 ├── src/
 │   ├── value.cpp        # Value operations implementation
-│   └── verbrt.cpp       # Runtime entry point & metadata
+│   └── verbrt.cpp       # Runtime initialization and metadata
 └── tests/
-    └── test_runtime.cpp # Comprehensive runtime test suite
+    └── test_runtime.cpp # Comprehensive native test suite
 ```
 
 ---
 
-## 📄 License
+## License
 
-Apache License 2.0. Copyright © 2026 Verbund Labs.
+Apache License 2.0. Copyright (c) 2026 Verbund Labs.

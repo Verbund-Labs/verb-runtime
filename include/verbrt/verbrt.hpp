@@ -3,6 +3,8 @@
 // VerbLang Native Runtime System
 // Developed by Verbund Labs
 
+#include <vector>
+#include <string>
 #include "verbrt/value.hpp"
 #include "verbrt/memory.hpp"
 #include "verbrt/css.hpp"
@@ -14,8 +16,11 @@
 
 namespace verbrt {
 
-inline void initialize() {
-    // Initialize default styles or global state
+inline void initialize(int argc = 0, char** argv = nullptr) {
+    g_cli_args.clear();
+    for (int i = 0; i < argc; ++i) {
+        g_cli_args.push_back(Value(std::string(argv[i])));
+    }
 }
 
 } // namespace verbrt

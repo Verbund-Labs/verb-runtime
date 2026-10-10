@@ -6,6 +6,10 @@
 #include <chrono>
 #include <thread>
 #include <fstream>
+#include <filesystem>
+#include <cstdlib>
+#include <cstdio>
+#include <algorithm>
 #include "verbrt/value.hpp"
 #include "verbrt/dom.hpp"
 #include "verbrt/css.hpp"
@@ -14,6 +18,8 @@
 #include "verbrt/json.hpp"
 
 namespace verbrt {
+
+inline std::vector<Value> g_cli_args;
 
 // Builtin Print function
 inline Value builtin_print(const std::vector<Value>& args) {
@@ -326,6 +332,159 @@ inline Value builtin_create_signal(const std::vector<Value>& args) {
     });
 
     return Value(dict);
+}
+
+// CLI arguments
+inline Value builtin_args(const std::vector<Value>& /*args*/) {
+    auto list = std::make_shared<ValueList>(g_cli_args);
+    return Value(list);
+}
+
+// Environment variables
+inline Value builtin_env_get(const std::vector<Value>& args) {
+    if (args.empty()) return Value("");
+    const char* val = std::getenv(args[0].to_string().c_str());
+    return val ? Value(std::string(val)) : Value();
+}
+
+inline Value builtin_env_set(const std::vector<Value>& args) {
+    if (args.size() >= 2) {
+        setenv(args[0].to_string().c_str(), args[1].to_string().c_str(), 1);
+        return Value(true);
+    }
+    return Value(false);
+}
+
+// File system checks
+inline Value builtin_file_exists(const std::vector<Value>& args) {
+    if (args.empty()) return Value(false);
+    return Value(std::filesystem::exists(args[0].to_string()));
+}
+
+inline Value builtin_file_remove(const std::vector<Value>& args) {
+    if (args.empty()) return Value(false);
+    std::error_code ec;
+    return Value(std::filesystem::remove(args[0].to_string(), ec));
+}
+
+// Subprocess execution
+inline Value builtin_exec(const std::vector<Value>& args) {
+    if (args.empty()) return Value("");
+    std::string cmd = args[0].to_string();
+    std::string result;
+    FILE* pipe = popen(cmd.c_str(), "r");
+    if (!pipe) return Value("");
+    char buffer[256];
+    while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+        result += buffer;
+    }
+    pclose(pipe);
+    return Value(result);
+}
+
+// Numerical & Math builtins
+inline Value builtin_abs(const std::vector<Value>& args) {
+    if (args.empty()) return Value(0);
+    if (args[0].is_int()) return Value(std::abs(args[0].as_int()));
+    return Value(std::abs(args[0].as_float()));
+}
+
+inline Value builtin_min(const std::vector<Value>& args) {
+    if (args.empty()) return Value();
+    Value cur = args[0];
+    for (size_t i = 1; i < args.size(); ++i) {
+        if ((args[i] < cur).is_truthy()) cur = args[i];
+    }
+    return cur;
+}
+
+inline Value builtin_max(const std::vector<Value>& args) {
+    if (args.empty()) return Value();
+    Value cur = args[0];
+    for (size_t i = 1; i < args.size(); ++i) {
+        if ((args[i] > cur).is_truthy()) cur = args[i];
+    }
+    return cur;
+}
+
+inline Value builtin_floor(const std::vector<Value>& args) {
+    if (args.empty()) return Value(0.0);
+    return Value(std::floor(args[0].as_float()));
+}
+
+inline Value builtin_ceil(const std::vector<Value>& args) {
+    if (args.empty()) return Value(0.0);
+    return Value(std::ceil(args[0].as_float()));
+}
+
+inline Value builtin_round(const std::vector<Value>& args) {
+    if (args.empty()) return Value(0.0);
+    return Value(std::round(args[0].as_float()));
+}
+
+// Extended string operations
+inline Value builtin_str_starts_with(const std::vector<Value>& args) {
+    if (args.size() < 2) return Value(false);
+    std::string s = args[0].to_string();
+    std::string prefix = args[1].to_string();
+    return Value(s.rfind(prefix, 0) == 0);
+}
+
+inline Value builtin_str_ends_with(const std::vector<Value>& args) {
+    if (args.size() < 2) return Value(false);
+    std::string s = args[0].to_string();
+    std::string suffix = args[1].to_string();
+    if (suffix.size() > s.size()) return Value(false);
+    return Value(s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0);
+}
+
+inline Value builtin_str_replace(const std::vector<Value>& args) {
+    if (args.size() < 3) return args.empty() ? Value("") : args[0];
+    std::string s = args[0].to_string();
+    std::string from = args[1].to_string();
+    std::string to = args[2].to_string();
+    if (from.empty()) return Value(s);
+    size_t pos = 0;
+    while ((pos = s.find(from, pos)) != std::string::npos) {
+        s.replace(pos, from.length(), to);
+        pos += to.length();
+    }
+    return Value(s);
+}
+
+// Extended list operations
+inline Value builtin_list_contains(const std::vector<Value>& args) {
+    if (args.size() < 2 || !args[0].is_list() || !args[0].list_val) return Value(false);
+    for (const auto& item : *args[0].list_val) {
+        if ((item == args[1]).is_truthy()) return Value(true);
+    }
+    return Value(false);
+}
+
+inline Value builtin_list_slice(const std::vector<Value>& args) {
+    if (args.empty() || !args[0].is_list() || !args[0].list_val) return Value::make_list();
+    const auto& src = *args[0].list_val;
+    int64_t start = args.size() > 1 ? args[1].as_int() : 0;
+    int64_t end = args.size() > 2 ? args[2].as_int() : static_cast<int64_t>(src.size());
+    if (start < 0) start = std::max<int64_t>(0, static_cast<int64_t>(src.size()) + start);
+    if (end < 0) end = std::max<int64_t>(0, static_cast<int64_t>(src.size()) + end);
+    start = std::min<int64_t>(start, static_cast<int64_t>(src.size()));
+    end = std::min<int64_t>(end, static_cast<int64_t>(src.size()));
+    auto slice = std::make_shared<ValueList>();
+    for (int64_t i = start; i < end; ++i) {
+        slice->push_back(src[i]);
+    }
+    return Value(slice);
+}
+
+// Assertion for testing
+inline Value builtin_assert(const std::vector<Value>& args) {
+    if (args.empty() || !args[0].is_truthy()) {
+        std::string msg = args.size() > 1 ? args[1].to_string() : "assertion failed";
+        std::cerr << "AssertionError: " << msg << "\n";
+        std::exit(1);
+    }
+    return Value(true);
 }
 
 } // namespace verbrt

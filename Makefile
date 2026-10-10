@@ -14,7 +14,7 @@ libverbrt.so: $(OBJ)
 	$(CXX) -shared -o $@ $^ -ldl
 
 test_runtime: tests/test_runtime.cpp libverbrt.a
-	$(CXX) $(CXXFLAGS) tests/test_runtime.cpp -L. -lverbrt -ldl -o $@
+	$(CXX) $(CXXFLAGS) tests/test_runtime.cpp libverbrt.a -ldl -o $@
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@

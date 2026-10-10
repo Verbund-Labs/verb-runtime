@@ -116,17 +116,47 @@ void test_async_event_loop() {
     std::cout << "  ✓ Async Event Loop passed!\n";
 }
 
-int main() {
-    std::cout << "========================================\n";
-    std::cout << " VerbLang Native Runtime Test Suite     \n";
-    std::cout << " Created by Verbund Labs                \n";
-    std::cout << "========================================\n";
+void test_stdlib_extensions() {
+    std::cout << "[TEST] Testing Extended Standard Library...\n";
+    // Math
+    assert(builtin_abs({Value(-42)}).as_int() == 42);
+    assert(builtin_min({Value(10), Value(5), Value(20)}).as_int() == 5);
+    assert(builtin_max({Value(10), Value(5), Value(20)}).as_int() == 20);
+    assert(builtin_floor({Value(3.7)}).as_float() == 3.0);
+    assert(builtin_ceil({Value(3.2)}).as_float() == 4.0);
+
+    // Strings
+    assert(builtin_str_starts_with({Value("verblang"), Value("verb")}).is_truthy());
+    assert(builtin_str_ends_with({Value("app.verb"), Value(".verb")}).is_truthy());
+    assert(builtin_str_replace({Value("hello world"), Value("world"), Value("verb")}).to_string() == "hello verb");
+
+    // Lists
+    auto l = Value::make_list();
+    l.append(Value("apple"));
+    l.append(Value("banana"));
+    assert(builtin_list_contains({l, Value("banana")}).is_truthy());
+    assert(!builtin_list_contains({l, Value("orange")}).is_truthy());
+
+    // File
+    assert(builtin_file_exists({Value("include/verbrt/stdlib.hpp")}).is_truthy());
+
+    // Assert builtin
+    assert(builtin_assert({Value(true)}).is_truthy());
+
+    std::cout << "  ✓ Extended Standard Library passed!\n";
+}
+
+int main(int argc, char** argv) {
+    initialize(argc, argv);
+    std::cout << "Running libverbrt native test suite\n";
+    std::cout << "-----------------------------------\n";
 
     test_values_and_operations();
     test_memory_and_defer();
     test_dom_and_css();
     test_async_event_loop();
+    test_stdlib_extensions();
 
-    std::cout << "\nALL RUNTIME TESTS PASSED SUCCESSFULLY! ⚡\n";
+    std::cout << "\nAll 5 test suites passed cleanly.\n";
     return 0;
 }
