@@ -173,6 +173,23 @@ public:
     Value operator>(const Value& other) const;
     Value operator>=(const Value& other) const;
     Value operator!() const { return Value(!is_truthy()); }
+
+    Value& operator+=(const Value& other) {
+        *this = *this + other;
+        return *this;
+    }
+    Value& operator-=(const Value& other) {
+        *this = *this - other;
+        return *this;
+    }
+    Value& operator*=(const Value& other) {
+        *this = *this * other;
+        return *this;
+    }
+    Value& operator/=(const Value& other) {
+        *this = *this / other;
+        return *this;
+    }
 };
 
 } // namespace verbrt

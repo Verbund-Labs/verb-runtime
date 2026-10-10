@@ -175,4 +175,19 @@ inline Value builtin_create_style(const std::string& selector, const std::unorde
     return Value(rule);
 }
 
+inline Value builtin_render_html(const std::vector<Value>& args) {
+    if (!args.empty() && args[0].is_node() && args[0].node_val) {
+        return Value(args[0].node_val->to_html());
+    }
+    return Value("");
+}
+
+inline Value builtin_render_tui(const std::vector<Value>& args) {
+    if (!args.empty() && args[0].is_node() && args[0].node_val) {
+        args[0].node_val->compute_styles();
+        return Value(args[0].node_val->render_tui());
+    }
+    return Value("");
+}
+
 } // namespace verbrt
