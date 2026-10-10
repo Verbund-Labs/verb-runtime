@@ -1,0 +1,39 @@
+name: VerbRuntime CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    name: Build & Test (${{ matrix.os }}, ${{ matrix.cxx }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        cxx: [clang++, g++]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build with Make
+        env:
+          CXX: ${{ matrix.cxx }}
+        run: |
+          make clean
+          make
+
+      - name: Run Test Suite
+        run: |
+          make test
+
+      - name: Build with CMake
+        run: |
+          mkdir -p build && cd build
+          cmake -DCMAKE_CXX_COMPILER=${{ matrix.cxx }} ..
+          cmake --build .
+          ./test_runtime

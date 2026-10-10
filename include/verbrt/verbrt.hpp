@@ -8,6 +8,7 @@
 #include "verbrt/css.hpp"
 #include "verbrt/dom.hpp"
 #include "verbrt/event_loop.hpp"
+#include "verbrt/json.hpp"
 #include "verbrt/stdlib.hpp"
 #include "verbrt/ffi.hpp"
 
